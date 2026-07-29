@@ -4,6 +4,7 @@ import tempfile
 import warnings
 
 import gradio as gr
+import spaces
 import torch
 import yt_dlp
 from faster_whisper import WhisperModel
@@ -64,6 +65,7 @@ def _format_srt(segments) -> str:
     return "\n".join(lines)
 
 
+@spaces.GPU
 def _transcribe(
     source_url: str | None,
     source_file: str | None,
