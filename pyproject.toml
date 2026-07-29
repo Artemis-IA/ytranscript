@@ -1,0 +1,14 @@
+[project]
+name = "ytranscript"
+version = "0.1.0"
+description = "YouTube to text with faster-whisper on Hugging Face Spaces"
+requires-python = ">=3.10"
+dependencies = [
+    "gradio>=5.0.0",
+    "faster-whisper>=1.0.0",
+    "yt-dlp>=2024.7.0",
+    "torch",
+]
+
+[tool.uv]
+dev-dependencies = []
