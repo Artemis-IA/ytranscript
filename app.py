@@ -17,7 +17,7 @@ MODEL_CPU = "small"
 SUPPORTED_LANGUAGES = ["auto", "en", "fr", "es", "de", "it", "pt", "nl", "pl", "ru", "zh", "ja", "ar", "hi"]
 
 
-def _download_audio(url: str, out_dir: str) -> str:
+def _download_audio(url: str, out_dir: str, cookies_file: str | None = None) -> str:
     """Télécharge l'audio d'une URL YouTube (ou autre supporté par yt-dlp)."""
     ydl_opts = {
         "format": "bestaudio/best",
@@ -33,7 +33,15 @@ def _download_audio(url: str, out_dir: str) -> str:
         "noplaylist": True,
         # Limite pour les VODs Twitch très longs
         "playlistend": 1,
+        # Contourner la détection bot YouTube
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"],
+            },
+        },
     }
+    if cookies_file:
+        ydl_opts["cookiefile"] = cookies_file
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         base = os.path.join(out_dir, "audio")
@@ -72,6 +80,7 @@ def _transcribe(
     language: str,
     model_choice: str,
     output_format: str,
+    cookies_file: str | None = None,
     progress=gr.Progress(),
 ):
     """Pipeline principal : téléchargement + transcription."""
@@ -91,7 +100,7 @@ def _transcribe(
                 audio_path = source_file
             else:
                 progress(0.1, desc="Téléchargement audio...")
-                audio_path = _download_audio(source_url, tmp_dir)
+                audio_path = _download_audio(source_url, tmp_dir, cookies_file)
 
             # Étape 2 : charger le modèle
             progress(0.3, desc=f"Chargement du modèle {model_name} sur {device}...")
@@ -168,6 +177,10 @@ with gr.Blocks(title="yTranscript — YouTube to text", theme=gr.themes.Soft()) 
                 label="Ou upload un fichier audio/vidéo",
                 file_types=["audio", "video"],
             )
+            cookies_input = gr.File(
+                label="Cookies (optionnel — cookies.txt pour YouTube)",
+                file_types=[".txt"],
+            )
 
         with gr.Column(scale=1):
             language = gr.Dropdown(
@@ -196,7 +209,7 @@ with gr.Blocks(title="yTranscript — YouTube to text", theme=gr.themes.Soft()) 
 
     run_btn.click(
         _transcribe,
-        inputs=[url_input, file_input, language, model_choice, output_format],
+        inputs=[url_input, file_input, language, model_choice, output_format, cookies_input],
         outputs=[text_output, srt_output, meta_output],
     )
 
